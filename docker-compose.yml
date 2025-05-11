@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  job-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job-monitor
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_PASSWORD=${SENDER_PASSWORD}
+      - RECIPIENT_EMAIL=${RECIPIENT_EMAIL}
+      - LINKEDIN_EMAIL=${LINKEDIN_EMAIL}
+      - LINKEDIN_PASSWORD=${LINKEDIN_PASSWORD}
+      - CHECK_INTERVAL=${CHECK_INTERVAL:-43200}  # 12 hours by default
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
