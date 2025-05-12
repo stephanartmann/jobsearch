@@ -38,4 +38,4 @@ RUN useradd -m -s /bin/bash appuser
 USER appuser
 
 # Run the email checker
-CMD ["python", "email_checker.py"]
+CMD ["python", "main.py"]

@@ -107,20 +107,33 @@ def login_to_linkedin(driver):
         print(f"Error logging into LinkedIn: {str(e)}")
         return False
 
-def needs_login_check(url, page_content):
+def analyze_webpage(url, page_content):
     """
-    Use GPT-3.5-turbo to determine if login is needed based on URL and page content
+    Use GPT-4 to analyze the webpage and determine if it's a job page or login page
+    Returns: (is_job_page: bool, is_login_page: bool, login_fields: dict)
     """
     try:
         prompt = f"""
-        You are a web page analyzer. Analyze the URL and page content to determine if a login is required.
+        You are a web page analyzer. Analyze the URL and page content to determine:
+        1. If this is a job listing page
+        2. If this is a login page
+        3. If it's a login page, identify the username and password field selectors
         
         URL: {url}
         
         Page content (first 1000 characters):
         {page_content[:1000]}
         
-        Answer ONLY with 'yes' if login is required, or 'no' if not.
+        Format your response as JSON:
+        {{
+            "is_job_page": true/false,
+            "is_login_page": true/false,
+            "login_fields": {{
+                "username_selector": "CSS selector",
+                "password_selector": "CSS selector",
+                "submit_selector": "CSS selector"
+            }}
+        }}
         """
         
         response = openai.ChatCompletion.create(
@@ -131,14 +144,51 @@ def needs_login_check(url, page_content):
             ]
         )
         
-        answer = response.choices[0].message.content.strip().lower()
-        return answer != 'no'
+        result = response.choices[0].message.content.strip()
+        analysis = eval(result)  # Safely evaluate the JSON response
+        return (analysis["is_job_page"], analysis["is_login_page"], analysis["login_fields"])
     except Exception as e:
-        print(f"Error checking login requirement: {str(e)}")
-        return True
+        print(f"Error analyzing webpage: {str(e)}")
+        return (False, False, {})
 
-def get_job_listing_content(url):
-    """Get job listing content using Selenium for LinkedIn links"""
+
+def login_to_webpage(driver, url, login_fields, username, password):
+    """
+    Handle login for any webpage using the provided selectors
+    Returns: True if login was successful, False otherwise
+    """
+    try:
+        driver.get(url)
+        
+        # Wait for username field and enter username
+        username_field = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, login_fields["username_selector"]))
+        )
+        username_field.send_keys(username)
+        
+        # Enter password
+        password_field = driver.find_element(By.CSS_SELECTOR, login_fields["password_selector"])
+        password_field.send_keys(password)
+        
+        # Click login button
+        login_button = driver.find_element(By.CSS_SELECTOR, login_fields["submit_selector"])
+        login_button.click()
+        
+        # Wait for login to complete
+        time.sleep(15)
+        
+        # Check if login was successful by looking for common error indicators
+        error_elements = driver.find_elements(By.CSS_SELECTOR, ".error, .alert-error")
+        return len(error_elements) == 0
+    except Exception as e:
+        print(f"Error logging into webpage: {str(e)}")
+        return False
+
+def get_job_listing_content(url, username=None, password=None):
+    """
+    Get job listing content from a URL, handling login if necessary
+    Returns: job information as markdown table or None if failed
+    """
     try:
         # Initialize Chrome driver
         service = Service(ChromeDriverManager().install())
@@ -149,39 +199,86 @@ def get_job_listing_content(url):
         
         driver = webdriver.Chrome(service=service, options=options)
         
-        # Navigate to URL first to check if login is needed
-        driver.get(url)
-        
-        # Wait for page to load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, 'body'))
-        )
-        
         # Get initial page content
-        initial_content = driver.page_source
-        
-        # Check if login is needed
-        if needs_login_check(url, initial_content):
-            print(f"Login required for URL: {url}")
-            # Login first
-            if not login_to_linkedin(driver):
-                return "Error: Failed to login to LinkedIn"
-                
-            # Navigate again after login
-            driver.get(url)
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, 'body'))
-            )
-        
-        # Get final page content
+        driver.get(url)
+        time.sleep(3)  # Wait for content to load
         page_content = driver.page_source
         
-        # Close driver
-        driver.quit()
+        # Analyze the page to determine its type
+        is_job_page, is_login_page, login_fields = analyze_webpage(url, page_content)
         
-        return page_content
+        if is_job_page:
+            # Extract job information directly
+            prompt = f"""
+            {definition_prompt}
+            
+            Extract job information from this web page content:
+            {page_content}
+            """
+            
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a job listing analyzer."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            job_info = response.choices[0].message.content.strip()
+            driver.quit()
+            return job_info
+        
+        elif is_login_page:
+            if not username or not password:
+                print("Login credentials required but not provided")
+                driver.quit()
+                return None
+            
+            # Perform login
+            if login_to_webpage(driver, url, login_fields, username, password):
+                # Get content after login
+                time.sleep(3)  # Wait for content to load after login
+                post_login_content = driver.page_source
+                
+                # Analyze again to confirm we have job content
+                is_job_page, _, _ = analyze_webpage(url, post_login_content)
+                
+                if is_job_page:
+                    prompt = f"""
+                    {definition_prompt}
+                    
+                    Extract job information from this web page content:
+                    {post_login_content}
+                    """
+                    
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You are a job listing analyzer."},
+                            {"role": "user", "content": prompt}
+                        ]
+                    )
+                    
+                    job_info = response.choices[0].message.content.strip()
+                    driver.quit()
+                    return job_info
+                else:
+                    print("Login successful but no job content found")
+                    driver.quit()
+                    return None
+            else:
+                print("Login failed")
+                driver.quit()
+                return None
+        
+        else:
+            print("Page is neither a job listing nor a login page")
+            driver.quit()
+            return None
+    
     except Exception as e:
-        return f"Error retrieving job listing: {str(e)}"
+        print(f"Error getting job listing content: {str(e)}")
+        return None
 
 def summarize_job_listing(url):
     try:

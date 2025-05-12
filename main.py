@@ -3,7 +3,7 @@ import os
 import time
 import logging
 from datetime import datetime
-from job_monitor import main as job_monitor_main
+from tools import main as tools_main
 
 # %% Configure logging
 logging.basicConfig(
@@ -18,13 +18,13 @@ logging.basicConfig(
 # Interval in seconds (12 hours = 43200 seconds)
 CHECK_INTERVAL = int(os.getenv('CHECK_INTERVAL', 43200))
 
-def check_emails():
+def process_new_mails():
     """
-    Main function to periodically check for new emails
+    Main function to periodically check for new emails and process them
     """
     try:
         logging.info("Starting email check...")
-        job_monitor_main()
+        tools_main()
         logging.info("Email check completed successfully")
     except Exception as e:
         logging.error(f"Error during email check: {str(e)}")
@@ -37,7 +37,7 @@ def main():
     
     while True:
         try:
-            check_emails()
+            process_new_mails()
             logging.info(f"Next check in {CHECK_INTERVAL/3600:.1f} hours")
             time.sleep(CHECK_INTERVAL)
         except KeyboardInterrupt:
