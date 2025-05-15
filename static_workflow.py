@@ -11,8 +11,9 @@ from bs4 import BeautifulSoup
 import openai
 from dotenv import load_dotenv
 from typing import Callable,Optional
+import json
 
-from utils import get_unread_emails
+from utils import get_unread_emails, extract_job_links, summarize_job_listing, send_email
 
 
 # Load environment variables
@@ -266,7 +267,7 @@ def analyze_webpage(url, page_content):
         )
         
         result = response.choices[0].message.content.strip()
-        analysis = eval(result)  # Safely evaluate the JSON response
+        analysis = json.loads(result)  # Parse JSON response
         return (analysis["is_job_page"], analysis["is_login_page"], analysis["login_fields"])
     except Exception as e:
         print(f"Error analyzing webpage: {str(e)}")
