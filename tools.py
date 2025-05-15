@@ -2,9 +2,11 @@ from utils import get_chrome_driver, get_page_content, login_to_linkedin, login_
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+from langchain_core.tools import tool
 
 driver = get_chrome_driver()
 
+@tool
 def login_to_webpage(url:str, login_fields:Dict[str,str])->bool:
     """
     Handle login for any webpage using the provided selectors
@@ -20,6 +22,7 @@ def login_to_webpage(url:str, login_fields:Dict[str,str])->bool:
         return login_to_linkedin(driver)
     return login_to_webpage(driver,url,login_fields)
 
+@tool
 def get_page_content(url:str)->str:
     """
     Get page content from a URL
@@ -33,6 +36,7 @@ def get_page_content(url:str)->str:
     page_content = get_page_content(driver,url)
     return page_content
 
+@tool
 def get_next_monday_connections(from_location: str, to_location: str) -> Dict:
     """
     Get transport connections for next Monday from opentransport API
