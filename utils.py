@@ -63,13 +63,14 @@ LINKEDIN_LOGIN_URL = 'https://www.linkedin.com/login'
 
 def get_chrome_driver() -> webdriver.Chrome:
     """Initialize Chrome driver"""
-    service = Service(ChromeDriverManager().install())
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Run in headless mode
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(service=service, options=options)
-    return driver
+    try:
+        service = Service(ChromeDriverManager().install())
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')  # Run in headless mode
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        driver = webdriver.Chrome(service=service, options=options)
+        return driver
     except Exception as e:
         logger.error(f"Failed to initialize Chrome driver: {str(e)}")
         raise

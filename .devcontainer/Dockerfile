@@ -20,12 +20,14 @@ RUN pip install python-dotenv
 #########################
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && apt-get install -y \
     curl \
     wget \
     unzip \
     git \
-    chromium \
+    google-chrome-stable \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
@@ -48,6 +50,7 @@ WORKDIR /workspace
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables

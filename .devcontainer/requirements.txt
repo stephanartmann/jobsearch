@@ -9,4 +9,8 @@ numpy==1.24.3
 python-dotenv==1.0.0
 selenium==4.15.2
 webdriver_manager==4.0.1
+langgraph==0.4.3
+langchain==0.3.25
+python-multipart==0.0.6
+pydantic==2.7.4
 
