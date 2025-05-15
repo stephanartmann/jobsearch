@@ -38,4 +38,4 @@ RUN useradd -m -s /bin/bash appuser
 USER appuser
 
 # Run the email checker
-CMD ["python", "main.py"]
+CMD ["python", "static_workflow.py"]
