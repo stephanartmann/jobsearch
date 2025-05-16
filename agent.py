@@ -11,8 +11,7 @@ from langchain.chat_models import init_chat_model
 from dotenv import load_dotenv
 
 from tools import get_page_content, get_next_monday_connections, login_to_webpage
-from langgraph.graph import ToolNode
-
+from langgraph.prebuilt import ToolNode, tools_condition
 # %%
 load_dotenv()
 
