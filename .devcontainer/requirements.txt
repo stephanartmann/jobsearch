@@ -13,4 +13,5 @@ langgraph==0.4.3
 langchain==0.3.25
 python-multipart==0.0.6
 pydantic==2.7.4
+langchain-openai==0.3.17
 
