@@ -1,4 +1,4 @@
-from utils import get_chrome_driver, get_page_content, login_to_linkedin, login_to_webpage
+from utils import get_chrome_driver, get_page_content_with_driver, login_to_linkedin, login_to_webpage
 import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -33,7 +33,7 @@ def get_page_content(url:str)->str:
     Returns:
         Page content as a string
     """
-    page_content = get_page_content(driver,url)
+    page_content = get_page_content_with_driver(driver,url)
     return page_content
 
 @tool

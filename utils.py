@@ -64,12 +64,15 @@ LINKEDIN_LOGIN_URL = 'https://www.linkedin.com/login'
 def get_chrome_driver() -> webdriver.Chrome:
     """Initialize Chrome driver"""
     try:
-        #service = Service(ChromeDriverManager().install())
+        chrome_install = ChromeDriverManager().install()
+        folder = os.path.dirname(chrome_install)
+        chromedriver_path = os.path.join(folder, "chromedriver")
+        service = Service(chromedriver_path)
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')  # Run in headless mode
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-        driver = webdriver.Chrome(options=options)#(service=service, options=options)
+        driver = webdriver.Chrome(service=service, options=options)
         return driver
     except Exception as e:
         logger.error(f"Failed to initialize Chrome driver: {str(e)}")
@@ -219,7 +222,7 @@ def extract_job_links(
         logger.error(f"Error extracting job links: {str(e)}")
         return []
     
-def get_page_content(url: str) -> str:
+def get_page_content_with_driver(url: str) -> str:
     """
     Get page content from a URL
 

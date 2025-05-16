@@ -37,7 +37,7 @@ RUN CHROME_DRIVER_VERSION=$(curl -sL https://chromedriver.storage.googleapis.com
     unzip /tmp/chromedriver.zip -d /usr/local/bin && \
     chmod +x /usr/local/bin/chromedriver && \
     rm /tmp/chromedriver.zip
-
+RUN chmod u+rwx /home/vscode/.wdm/drivers/chromedriver/linux64/136.0.7103.94/chromedriver-linux64/chromedriver
 
 
 #######################
